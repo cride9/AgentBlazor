@@ -1,0 +1,70 @@
+﻿<div class="z-50 w-full md:static absolute bottom-0 md:flex flex-col justify-between p-2 border-r bg-white dark:bg-[#1f1f1f] border-gray-200 dark:border-[#3d3d3d] transition-all duration-300 ease-in-out overflow-hidden">
+    <div class="flex flex-col gap-2 h-full">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-2">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <img class="w-10 h-10" src="evaLogoTransparent.png" alt="EVA Logo">
+                <p class="sidebar-text bg-gradient-to-r from-purple-600 to-blue-500 dark:from-white dark:to-[#dcd0ff] bg-clip-text text-transparent text-2xl font-bold whitespace-nowrap transition-opacity duration-200">EVA Agent</p>
+            </div>
+            <button @onclick="OnHistoryToggle" class="md:hidden p-2 rounded-md hover:bg-gray-200 dark:hover:bg-purple-100/20 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300 @(IsSidebarExpandedOnMobile ? "rotate-180" : "")" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Chat History (conditionally rendered on mobile) -->
+        <div class="px-2 flex-grow overflow-y-auto custom-scrollbar @(IsSidebarExpandedOnMobile ? "block" : "hidden md:block")">
+            <ul class="space-y-1">
+                <!-- Hardcoded for demonstration -->
+                <li>
+                    <h3 class="sidebar-text text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2 transition-opacity duration-200">Today</h3>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 bg-purple-100 dark:bg-[#6c667e] text-purple-700 dark:text-white font-semibold transition-colors">
+                        <ChatIcon />
+                        <span class="sidebar-text truncate transition-opacity duration-200">Exploring Tailwind CSS for Chat UIs</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-100/20 font-semibold transition-colors">
+                        <ChatIcon />
+                        <span class="sidebar-text truncate transition-opacity duration-200">Implementing Light/Dark Mode</span>
+                    </a>
+                </li>
+                <li>
+                    <h3 class="sidebar-text text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2 transition-opacity duration-200">Yesterday</h3>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-purple-100/20 font-semibold transition-colors">
+                        <ChatIcon />
+                        <span class="sidebar-text truncate transition-opacity duration-200">Future of AI Assistants</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer / Theme Toggle -->
+    <div class="p-2 border-t border-gray-200 dark:border-[#3d3d3d] @(IsSidebarExpandedOnMobile ? "block" : "hidden md:block")">
+        <button @onclick="OnThemeToggle" class="w-full h-full flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-purple-100/20 transition-colors">
+            <span class="dark:hidden"><SunIcon /></span>
+            <span class="hidden dark:inline"><MoonIcon /></span>
+            <span class="sidebar-text transition-opacity duration-200">Toggle Theme</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string CurrentTheme { get; set; } = "light";
+
+    [Parameter]
+    public bool IsSidebarExpandedOnMobile { get; set; }
+
+    [Parameter]
+    public EventCallback OnThemeToggle { get; set; }
+
+    [Parameter]
+    public EventCallback OnHistoryToggle { get; set; }
+}

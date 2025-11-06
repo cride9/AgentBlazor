@@ -1,0 +1,37 @@
+﻿@if (IsUserMessage)
+{
+    <div class="flex items-start gap-3 justify-end">
+        <div class="relative text-right">
+            <div class="bubble-right bg-purple-100 dark:bg-[#6c667e] dark:text-white px-4 py-2 rounded-2xl rounded-tr-none shadow-sm max-w-[70vw]">
+                <p class="text-sm leading-relaxed whitespace-pre-wrap">@Text</p>
+            </div>
+            <div class="mt-1 text-xs text-gray-400 dark:text-gray-500">@Timestamp</div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="flex items-start gap-3">
+        <img src="@AvatarUrl" alt="avatar" class="w-10 h-10 rounded-full flex-shrink-0">
+        <div class="relative">
+            <div class="bubble-left bg-white dark:bg-[#2b2b2b] text-gray-900 dark:text-gray-100 px-4 py-2 rounded-2xl rounded-tl-none shadow-sm max-w-[70vw]">
+                <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                    @Text
+                    @if (IsStreaming)
+                    {
+                        <span class="inline-block w-2 h-4 ml-1 bg-purple-600 dark:bg-purple-300 animate-pulse"></span>
+                    }
+                </p>
+            </div>
+            <div class="mt-1 text-xs text-gray-400 dark:text-gray-500 ml-1">@Timestamp</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsUserMessage { get; set; }
+    [Parameter] public string Text { get; set; } = string.Empty;
+    [Parameter] public string Timestamp { get; set; } = string.Empty;
+    [Parameter] public string? AvatarUrl { get; set; }
+    [Parameter] public bool IsStreaming { get; set; }
+}

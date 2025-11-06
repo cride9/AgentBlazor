@@ -1,0 +1,112 @@
+﻿@page "/chat"
+@inject IJSRuntime JSRuntime
+@inject AgentService AgentService
+@implements IAsyncDisposable
+
+<div class="@MainGridCssClass">
+    <Sidebar CurrentTheme="@currentTheme"
+             IsSidebarExpandedOnMobile="@isSidebarExpandedOnMobile"
+             OnThemeToggle="ToggleTheme"
+             OnHistoryToggle="ToggleHistory" />
+
+    <ChatView Messages="@messages" OnSendMessage="HandleSendMessage" />
+</div>
+
+@code {
+    private string currentTheme = "light";
+    private bool isSidebarExpandedOnMobile = false;
+    private DotNetObjectReference<ChatPage>? objRef;
+    private string MainGridCssClass =>
+        new System.Text.StringBuilder("grid grid-cols-1 md:grid-cols-[260px_1fr] h-full transition-all duration-300 ease-in-out ")
+        .Append(isSidebarExpandedOnMobile ? "grid-rows-[1fr_min-content]" : "grid-rows-[68px_1fr] md:grid-rows-1")
+        .ToString();
+
+    private List<ChatMessageModel> messages = new();
+    private ChatMessageModel? currentAgentMessage;
+
+    protected override void OnInitialized()
+    {
+        objRef = DotNetObjectReference.Create(this);
+        AgentService.OnChunkReceived += OnChunkReceivedHandler;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            currentTheme = await JSRuntime.InvokeAsync<string>("themeInterop.initializeTheme");
+            await JSRuntime.InvokeVoidAsync("resizeInterop.registerResizeCallback", objRef);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandleSendMessage(string messageText)
+    {
+        messages.Add(new ChatMessageModel
+        {
+            IsUserMessage = true,
+            Text = messageText,
+            Timestamp = DateTime.Now.ToShortTimeString()
+        });
+
+        currentAgentMessage = new ChatMessageModel
+        {
+            IsUserMessage = false,
+            AvatarUrl = "evaLogoTransparent.png",
+            Timestamp = DateTime.Now.ToShortTimeString(),
+            IsStreaming = true
+        };
+        messages.Add(currentAgentMessage);
+
+        StateHasChanged();
+
+        await AgentService.RunAsync(messageText);
+
+        if (currentAgentMessage != null)
+        {
+            currentAgentMessage.IsStreaming = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnChunkReceivedHandler(string chunk)
+    {
+        if (currentAgentMessage != null)
+        {
+            currentAgentMessage.Text += chunk;
+
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    private void ToggleHistory() => isSidebarExpandedOnMobile = !isSidebarExpandedOnMobile;
+
+    private async Task ToggleTheme()
+    {
+        currentTheme = (currentTheme == "light") ? "dark" : "light";
+        await JSRuntime.InvokeVoidAsync("themeInterop.setTheme", currentTheme);
+    }
+
+    [JSInvokable]
+    public void OnBrowserResize()
+    {
+        if (isSidebarExpandedOnMobile)
+        {
+            isSidebarExpandedOnMobile = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        AgentService.OnChunkReceived -= OnChunkReceivedHandler;
+
+        if (objRef != null)
+        {
+            try { await JSRuntime.InvokeVoidAsync("resizeInterop.unregisterResizeCallback"); }
+            catch {  }
+            objRef.Dispose();
+        }
+    }
+}

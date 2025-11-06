@@ -1,0 +1,29 @@
+﻿@page "/"
+@inject AgentService AgentService
+
+<div>
+	<InputText @bind-Value="input" placeholder="Type something..." />
+    <button @onclick="SendHello">Start task</button>
+    <div id="output">@output</div>
+</div>
+
+@code {
+    private string output = "";
+    private string input = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        AgentService.OnChunkReceived += OnChunkReceivedHandler;
+    }
+
+    private void OnChunkReceivedHandler(string chunk)
+    {
+        output += chunk;
+        StateHasChanged();
+    }
+
+    private async Task SendHello()
+    {
+        await AgentService.RunAsync("Hello");
+    }
+}
