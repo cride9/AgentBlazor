@@ -28,6 +28,7 @@
     {
         objRef = DotNetObjectReference.Create(this);
         AgentService.OnChunkReceived += OnChunkReceivedHandler;
+        AgentService.OnToolCallReceived += OnToolCallReceivedHandler;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -79,6 +80,26 @@
         }
     }
 
+    private void OnToolCallReceivedHandler(ToolCallModel toolCall)
+    {
+        if (currentAgentMessage != null)
+        {
+            var existingToolCall = currentAgentMessage.ToolCalls
+                .FindIndex(tc => tc.Id == toolCall.Id);
+
+            if (existingToolCall == -1)
+            {
+                currentAgentMessage.ToolCalls.Add(toolCall);
+            }
+            else
+            {
+                currentAgentMessage.ToolCalls[existingToolCall].Status = toolCall.Status;
+            }
+
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
 
     private void ToggleHistory() => isSidebarExpandedOnMobile = !isSidebarExpandedOnMobile;
 
@@ -101,6 +122,7 @@
     public async ValueTask DisposeAsync()
     {
         AgentService.OnChunkReceived -= OnChunkReceivedHandler;
+        AgentService.OnToolCallReceived -= OnToolCallReceivedHandler;
 
         if (objRef != null)
         {

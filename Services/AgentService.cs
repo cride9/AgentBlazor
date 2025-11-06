@@ -1,33 +1,47 @@
 ﻿using AgentBlazor.Services.AgentTools;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using AgentBlazor.Models;
+using System.Linq;
+
 
 namespace AgentBlazor.Services;
 public delegate void OnChunkReceived(string chunkText);
+public delegate void OnToolCallReceived(ToolCallModel toolCall);
 
 public class AgentService
 {
     readonly private IChatClient _chatClient;
     readonly private AIAgent _agent;
-    private AgentContext _context = new();
+    private readonly AgentContext _context;
     public event OnChunkReceived? OnChunkReceived;
+    public event OnToolCallReceived? OnToolCallReceived;
 
-    public AgentService(IChatClient chatClient)
+    public AgentService(IChatClient chatClient, AgentContext context)
     {
+        _context = context;
+        _context.OnToolCallReceived = (toolCall) =>
+        {
+            OnToolCallReceived?.Invoke(toolCall);
+        };
         _chatClient = chatClient;
         _agent = new ChatClientAgent(
             chatClient,
             new ChatClientAgentOptions
             {
                 Name = "MainAgent",
-                Instructions = "You're an agent running in a ReAct loop. Do the task with your tools and then end the loop when it's done. DO NOT ASK FOR OTHER TASKS OR HELP. STOP WHEN THE MAIN TASK IS DONE. You have experts to call for specific tasks",
+                Instructions = Instructions.Instruction,
                 ChatOptions = new ChatOptions
                 {
                     AllowMultipleToolCalls = true,
                     ToolMode = ChatToolMode.Auto,
                     Tools = new List<AITool> {
-                        new ListDirectory(_context.WorkingDirectory),
-                        new StopLoop(_context)
+                        new CreateDirectory(_context),
+                        new ExecuteCommand(_context),
+                        new ListDirectory(_context),
+                        new ReadFile(_context),
+                        new StopLoop(_context),
+                        new WriteFile(_context),
                     },
                 },
             }
@@ -57,6 +71,7 @@ public class AgentContext
     public Guid AgentGuid { get; } = Guid.NewGuid();
     public bool StopLoop { get; set; } = false;
     public AgentThread Thread { get; set; }
+    public Action<ToolCallModel>? OnToolCallReceived { get; set; }
 
     public AgentContext()
     {

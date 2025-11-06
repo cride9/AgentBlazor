@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.AI;
+﻿using AgentBlazor.Models;
+using Microsoft.Extensions.AI;
 using System.Text.Json;
 
 namespace AgentBlazor.Services.AgentTools;
@@ -24,6 +25,14 @@ public class StopLoop : AIFunction
         AIFunctionArguments arguments,
         CancellationToken cancellationToken)
     {
+
+        _ctx.OnToolCallReceived?.Invoke(new ToolCallModel
+        {
+            Id = Guid.NewGuid(),
+            Name = Name,
+            Arguments = "",
+            Status = "Done",
+        });
 
         _ctx.StopLoop = true;
         return true;

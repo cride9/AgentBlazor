@@ -24,6 +24,7 @@ builder.Services.AddSingleton<IChatClient>(sp =>
 
     return chatClient;
 });
+builder.Services.AddSingleton<AgentContext>();
 builder.Services.AddScoped<AgentService>();
 
 var app = builder.Build();

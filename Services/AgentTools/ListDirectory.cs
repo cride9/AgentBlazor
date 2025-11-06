@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.AI;
+﻿using AgentBlazor.Models;
+using Microsoft.Extensions.AI;
 using System.Text.Json;
 
 namespace AgentBlazor.Services.AgentTools;
@@ -6,9 +7,11 @@ namespace AgentBlazor.Services.AgentTools;
 public class ListDirectory : AIFunction
 {
     private readonly string _basePath;
-    public ListDirectory(string path)
+    private readonly AgentContext _ctx;
+    public ListDirectory(AgentContext ctx)
     {
-        _basePath = path;
+        _ctx = ctx;
+        _basePath = _ctx.WorkingDirectory;
     }
 
     public override string Name => "list_directory";
@@ -26,7 +29,17 @@ public class ListDirectory : AIFunction
         }").RootElement;
     protected override async ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken cancellationToken)
     {
+
         string relativePath = arguments.GetValueOrDefault("path") is JsonElement nameElem ? nameElem.GetString()! : null!;
+
+        var call = new ToolCallModel
+        {
+            Id = Guid.NewGuid(),
+            Name = Name,
+            Arguments = relativePath,
+            Status = "Running..."
+        };
+        _ctx.OnToolCallReceived?.Invoke(call);
 
         string fullPath = Path.GetFullPath(Path.Combine(_basePath, relativePath));
 
@@ -36,6 +49,9 @@ public class ListDirectory : AIFunction
         var entries = Directory.EnumerateFileSystemEntries(fullPath)
                                .Select(Path.GetFileName)
                                .ToList();
+
+        call.Status = "Done";
+        _ctx.OnToolCallReceived?.Invoke(call);
 
         return entries;
     }
