@@ -9,13 +9,11 @@ namespace AgentBlazor.Services.AgentTools;
 
 public class ExecuteCommand : AIFunction
 {
-    private readonly string _basePath;
     private readonly AgentContext _ctx;
 
     public ExecuteCommand(AgentContext ctx)
     {
         _ctx = ctx;
-        _basePath = _ctx.WorkingDirectory;
     }
 
     public override string Name => "execute_command";
@@ -58,7 +56,7 @@ public class ExecuteCommand : AIFunction
             var process = new Process();
             var processStartInfo = new ProcessStartInfo
             {
-                WorkingDirectory = _basePath,
+                WorkingDirectory = _ctx.WorkingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

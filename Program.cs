@@ -10,21 +10,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddSingleton<IChatClient>(sp =>
+builder.Services.AddSingleton(sp =>
 {
     var chatClient = new ChatClient(
-        "deepseek-chat",
+        "hf.co/unsloth/aquif-3.5-Max-42B-A3B-GGUF:IQ4_NL",
         new ApiKeyCredential("sk-"),
         new OpenAIClientOptions
         {
-            Endpoint = new Uri("https://api.deepseek.com"),
+            Endpoint = new Uri("http://localhost:11434/v1"),
             NetworkTimeout = TimeSpan.FromMinutes(10)
         }
     ).AsIChatClient();
 
     return chatClient;
 });
-builder.Services.AddSingleton<AgentContext>();
+builder.Services.AddScoped<AgentContext>();
 builder.Services.AddScoped<AgentService>();
 
 var app = builder.Build();

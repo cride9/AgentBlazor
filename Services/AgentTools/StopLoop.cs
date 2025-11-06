@@ -34,6 +34,7 @@ public class StopLoop : AIFunction
             Status = "Done",
         });
 
+        _ctx.CancellationSource.Cancel();
         _ctx.StopLoop = true;
         return true;
     }

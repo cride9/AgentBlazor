@@ -6,12 +6,10 @@ namespace AgentBlazor.Services.AgentTools;
 
 public class ListDirectory : AIFunction
 {
-    private readonly string _basePath;
     private readonly AgentContext _ctx;
     public ListDirectory(AgentContext ctx)
     {
         _ctx = ctx;
-        _basePath = _ctx.WorkingDirectory;
     }
 
     public override string Name => "list_directory";
@@ -41,10 +39,15 @@ public class ListDirectory : AIFunction
         };
         _ctx.OnToolCallReceived?.Invoke(call);
 
-        string fullPath = Path.GetFullPath(Path.Combine(_basePath, relativePath));
+        string fullPath = Path.GetFullPath(Path.Combine(_ctx.WorkingDirectory, relativePath));
 
-        if (!fullPath.Contains(_basePath))
+        if (!fullPath.Contains(_ctx.WorkingDirectory))
+        {
+            call.Status = "Error";
+            _ctx.OnToolCallReceived?.Invoke(call);
             return ("Access outside of agent folder is not allowed.");
+
+        }
 
         var entries = Directory.EnumerateFileSystemEntries(fullPath)
                                .Select(Path.GetFileName)

@@ -6,13 +6,11 @@ namespace AgentBlazor.Services.AgentTools;
 
 public class CreateDirectory : AIFunction
 {
-    private readonly string _basePath;
     private readonly AgentContext _ctx;
 
     public CreateDirectory(AgentContext ctx)
     {
         _ctx = ctx;
-        _basePath = _ctx.WorkingDirectory;
     }
 
     public override string Name => "create_directory";
@@ -52,9 +50,9 @@ public class CreateDirectory : AIFunction
 
         try
         {
-            string fullPath = Path.GetFullPath(Path.Combine(_basePath, relativePath));
+            string fullPath = Path.GetFullPath(Path.Combine(_ctx.WorkingDirectory, relativePath));
 
-            if (!fullPath.Contains(_basePath))
+            if (!fullPath.Contains(_ctx.WorkingDirectory))
             {
                 call.Status = "Error";
                 _ctx.OnToolCallReceived?.Invoke(call);

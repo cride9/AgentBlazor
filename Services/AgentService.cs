@@ -51,31 +51,51 @@ public class AgentService
 
     public async Task RunAsync(string userInput, CancellationToken cancellationToken = default)
     {
-        await foreach (var chunk in _agent.RunStreamingAsync(userInput, _context.Thread))
+        _context.Initialize();
+        do
         {
-            OnChunkReceived?.Invoke(chunk.Text);
-        }
-        while (!_context.StopLoop)
-        {
-            await foreach (var chunk in _agent.RunStreamingAsync(_context.Thread))
-            {
+            var stream = string.IsNullOrEmpty(userInput)
+                    ? _agent.RunStreamingAsync(_context.Thread, cancellationToken: _context.CancellationSource.Token)
+                    : _agent.RunStreamingAsync(userInput, _context.Thread, cancellationToken: _context.CancellationSource.Token);
+
+            await foreach (var chunk in stream)
                 OnChunkReceived?.Invoke(chunk.Text);
-            }
-        }
+
+            userInput = string.Empty;
+
+        } while (!_context.StopLoop);
+        _context.Reset();
     }
 }
 
 public class AgentContext
 {
-    public string WorkingDirectory { get; }
+    public string WorkingDirectory { get; set; }
     public Guid AgentGuid { get; } = Guid.NewGuid();
     public bool StopLoop { get; set; } = false;
     public AgentThread Thread { get; set; }
     public Action<ToolCallModel>? OnToolCallReceived { get; set; }
+    public CancellationTokenSource CancellationSource { get; private set; }
+    private bool initialized = false;
 
-    public AgentContext()
+    public void Initialize()
     {
+        if (initialized) return;
+        CancellationSource = new();
         WorkingDirectory = Path.Combine("agents", AgentGuid.ToString());
         Directory.CreateDirectory(WorkingDirectory);
+        initialized = true;
+    }
+
+    public void Reset()
+    {
+        if (CancellationSource != null)
+        {
+            try { CancellationSource.Cancel(); } catch { }
+            CancellationSource.Dispose();
+        }
+
+        CancellationSource = new CancellationTokenSource();
+        StopLoop = false;
     }
 }

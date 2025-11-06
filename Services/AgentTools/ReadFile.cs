@@ -6,13 +6,11 @@ namespace AgentBlazor.Services.AgentTools;
 
 public class ReadFile : AIFunction
 {
-    private readonly string _basePath;
     private readonly AgentContext _ctx;
 
     public ReadFile(AgentContext ctx)
     {
         _ctx = ctx;
-        _basePath = _ctx.WorkingDirectory;
     }
 
     public override string Name => "read_file";
@@ -52,10 +50,10 @@ public class ReadFile : AIFunction
 
         try
         {
-            string fullPath = Path.GetFullPath(Path.Combine(_basePath, relativePath));
+            string fullPath = Path.GetFullPath(Path.Combine(_ctx.WorkingDirectory, relativePath));
 
             // SECURITY: Ensure the path is within the agent's working directory.
-            if (!fullPath.Contains(_basePath))
+            if (!fullPath.Contains(_ctx.WorkingDirectory))
             {
                 call.Status = "Error";
                 _ctx.OnToolCallReceived?.Invoke(call);
