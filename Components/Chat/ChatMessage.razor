@@ -12,7 +12,7 @@
 else
 {
     <div class="flex items-start gap-3">
-        <img src="@AvatarUrl" alt="avatar" class="w-10 h-10 rounded-full flex-shrink-0">
+        <img src="@AvatarUrl" alt="avatar" class="w-10 h-10 rounded-full flex-shrink-0 md:block hidden">
         <div class="relative">
             <div class="bubble-left bg-white dark:bg-[#2b2b2b] text-gray-900 dark:text-gray-100 px-4 py-2 rounded-2xl rounded-tl-none shadow-sm max-w-[70vw]">
                 @if (ToolCalls.Any())
@@ -29,10 +29,7 @@ else
                         }
                     </div>
                 }
-                <p class="prose prose-sm dark:prose-invert text-sm leading-snug whitespace-pre-wrap
-                        [&_h1]:my-1 [&_h2]:my-1 [&_h3]:my-1
-                        [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5
-                        [&_code]:text-[0.9em] [&_pre]:my-2 [&_pre]:p-2 [&_pre]:rounded-lg">
+                <p class="prose prose-sm dark:prose-invert text-sm leading-snug">
                     <MarkdownStream Text="@Text"></MarkdownStream>
                 </p>
             </div>

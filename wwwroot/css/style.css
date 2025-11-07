@@ -17,9 +17,14 @@ body {
     border-radius: 3px;
 }
 
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #5a5a5a;
-    }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+}
+
+.markdown_div p {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
 
 textarea {
     background-color: transparent;

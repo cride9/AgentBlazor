@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton<IChatClient>(sp =>
 {
     var chatClient = new ChatClient(
         "qwen3:30b-a3b-instruct-2507-q4_K_M",
