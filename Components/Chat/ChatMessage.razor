@@ -29,12 +29,11 @@ else
                         }
                     </div>
                 }
-                <p class="text-sm leading-relaxed whitespace-pre-wrap">
-                    @Text
-@*                     @if (IsStreaming)
-                    {
-                        <span class="inline-block w-2 h-4 ml-1 bg-purple-600 dark:bg-purple-300 animate-pulse"></span>
-                    } *@
+                <p class="prose prose-sm dark:prose-invert text-sm leading-snug whitespace-pre-wrap
+                        [&_h1]:my-1 [&_h2]:my-1 [&_h3]:my-1
+                        [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5
+                        [&_code]:text-[0.9em] [&_pre]:my-2 [&_pre]:p-2 [&_pre]:rounded-lg">
+                    <MarkdownStream Text="@Text"></MarkdownStream>
                 </p>
             </div>
             <div class="mt-1 text-xs text-gray-400 dark:text-gray-500 ml-1">@Timestamp</div>

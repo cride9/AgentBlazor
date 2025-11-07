@@ -1,0 +1,28 @@
+﻿@inject IJSRuntime JS
+
+<div @ref="markdownDiv" class="@Class"></div>
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string? _lastRendered;
+    private ElementReference markdownDiv;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // re-render only if the full text changed
+        if (Text != _lastRendered)
+        {
+            _lastRendered = Text;
+            try
+            {
+                await JS.InvokeVoidAsync("llmMarkdown.set", markdownDiv, Text ?? "");
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine($"JS interop error: {ex.Message}");
+            }
+        }
+    }
+}

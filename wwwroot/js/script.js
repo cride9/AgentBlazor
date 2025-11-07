@@ -21,6 +21,13 @@ window.themeInterop = {
     }
 };
 
+window.llmMarkdown = {
+    set: (element, text) => {
+        if (!element) return;
+        element.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
+    }
+};
+
 // Auto-resizes a textarea based on its content
 window.textAreaInterop = {
     autoResize: (element) => {

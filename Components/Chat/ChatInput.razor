@@ -71,6 +71,8 @@
         // clear first, then trigger UI update
         currentMessage = string.Empty;
         textAreaInputRef.Value = string.Empty;
+
+        await InvokeAsync(StateHasChanged);
         await Task.Yield();
         await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textAreaInputRef?.Element);
         await InvokeAsync(StateHasChanged);

@@ -5,5 +5,8 @@
   },
   "scripts": {
     "css": "npx @tailwindcss/cli -i ./input.css -o ./wwwroot/css/output.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19"
   }
 }
