@@ -37,9 +37,12 @@ public class AgentService
                     ToolMode = ChatToolMode.Auto,
                     Tools = new List<AITool> {
                         new CreateDirectory(_context),
+                        new CreatePdfFile(_context),
                         new ExecuteCommand(_context),
+                        new GetTextFromWebPage(_context),
                         new ListDirectory(_context),
                         new ReadFile(_context),
+                        new WebSearch(_context),
                         new WriteFile(_context),
                     },
                 },

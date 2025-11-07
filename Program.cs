@@ -14,7 +14,7 @@ builder.Services.AddSingleton(sp =>
 {
     var chatClient = new ChatClient(
         "qwen3:30b-a3b-instruct-2507-q4_K_M",
-        new ApiKeyCredential("sk-"),
+        new ApiKeyCredential(Environment.GetEnvironmentVariable("DEEPSEEK")),
         new OpenAIClientOptions
         {
             Endpoint = new Uri("http://26.86.240.240:11434/v1"),
