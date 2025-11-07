@@ -1,7 +1,7 @@
 ﻿@if (IsUserMessage)
 {
     <div class="flex items-start gap-3 justify-end">
-        <div class="relative text-right">
+        <div class="relative">
             <div class="bubble-right bg-purple-100 dark:bg-[#6c667e] dark:text-white px-4 py-2 rounded-2xl rounded-tr-none shadow-sm max-w-[70vw]">
                 <p class="text-sm leading-relaxed whitespace-pre-wrap">@Text</p>
             </div>
@@ -31,10 +31,10 @@ else
                 }
                 <p class="text-sm leading-relaxed whitespace-pre-wrap">
                     @Text
-                    @if (IsStreaming)
+@*                     @if (IsStreaming)
                     {
                         <span class="inline-block w-2 h-4 ml-1 bg-purple-600 dark:bg-purple-300 animate-pulse"></span>
-                    }
+                    } *@
                 </p>
             </div>
             <div class="mt-1 text-xs text-gray-400 dark:text-gray-500 ml-1">@Timestamp</div>

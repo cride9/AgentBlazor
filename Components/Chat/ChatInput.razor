@@ -13,13 +13,14 @@
         }
 
         <div class="flex flex-col border bg-white dark:bg-[#2b2b2b] shadow-lg dark:drop-shadow-[0_15px_35px_rgba(220,208,255,0.15)] border-gray-300 dark:border-[#353535] rounded-2xl p-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
-            <textarea @ref="textareaElement"
-                      value="@currentMessage"
-                      @onkeydown="HandleKeyDown"
-                      @oninput="HandleInput"
-                      class="custom-scrollbar flex-grow outline-0 bg-transparent caret-purple-500 dark:caret-[#dcd0ff] w-full resize-none text-base placeholder-gray-500 dark:placeholder-gray-400 p-2"
-                      rows="1"
-                      placeholder="Message EVA..."></textarea>
+            <InputTextArea @ref="textAreaInputRef"
+                           @onkeydown="HandleKeyDown"
+                           @oninput="HandleInput"
+                           @bind-Value="currentMessage"
+                           class="custom-scrollbar flex-grow outline-0 bg-transparent caret-purple-500 dark:caret-[#dcd0ff] w-full resize-none text-base placeholder-gray-500 dark:placeholder-gray-400 p-2"
+                           rows="1"
+                           placeholder="Message EVA...">
+            </InputTextArea>
 
             <div class="pt-2">
                 <div class="w-full flex justify-between items-center text-xs">
@@ -27,7 +28,7 @@
                         <button title="Voice Search Off" class="border bg-gray-100 dark:bg-[#222222] border-gray-300 dark:border-[#3d3d3d] rounded-full w-10 h-10 flex justify-center items-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-purple-100/20 transition"><MicrophoneSlashIcon /></button>
                         <button title="Voice Search On" class="border bg-purple-600 dark:bg-[#514d5f] border-purple-700 dark:border-[#3d3d3d] rounded-full w-10 h-10 flex justify-center items-center text-white dark:text-gray-200"><MicrophoneIcon /></button>
                     </div>
-                    <button @onclick="SendMessage" title="Send Message" class="bg-purple-600 dark:bg-[#dcd0ff] w-10 h-10 rounded-full flex items-center justify-center hover:bg-purple-700 dark:hover:bg-purple-300 transition"><ArrowUpIcon /></button>
+                    <button disabled="@IsDisabled" @onclick="SendMessage" title="Send Message" class="bg-purple-600 dark:bg-[#dcd0ff] w-10 h-10 rounded-full flex items-center justify-center hover:bg-purple-700 dark:hover:bg-purple-300 transition"><ArrowUpIcon /></button>
                 </div>
             </div>
         </div>
@@ -36,7 +37,8 @@
 
 @code {
     private string? currentMessage;
-    private ElementReference textareaElement;
+    private InputTextArea? textAreaInputRef;
+    private bool IsDisabled = false;
 
     [Parameter]
     public bool ShowIntro { get; set; }
@@ -46,27 +48,34 @@
 
     private async Task HandleInput(ChangeEventArgs e)
     {
-        currentMessage = e.Value?.ToString();
-        await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textareaElement);
+        await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textAreaInputRef?.Element);
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !e.ShiftKey)
+        if (e.Key == "Enter" && !e.ShiftKey && !IsDisabled)
         {
+            await JSRuntime.InvokeVoidAsync("textAreaInterop.blurElement", textAreaInputRef?.Element);
             await SendMessage();
         }
     }
 
     private async Task SendMessage()
     {
-        if (!string.IsNullOrWhiteSpace(currentMessage))
-        {
-            await OnSendMessage.InvokeAsync(currentMessage.Trim());
+        if (string.IsNullOrWhiteSpace(currentMessage))
+            return;
 
-            currentMessage = string.Empty;
-            await Task.Delay(1);
-            await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textareaElement);
-        }
+        IsDisabled = true;
+        var message = currentMessage.Trim();
+
+        // clear first, then trigger UI update
+        currentMessage = string.Empty;
+        textAreaInputRef.Value = string.Empty;
+        await Task.Yield();
+        await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textAreaInputRef?.Element);
+        await InvokeAsync(StateHasChanged);
+
+        await OnSendMessage.InvokeAsync(message);
+        IsDisabled = false;
     }
 }

@@ -64,8 +64,7 @@ public class CreateDirectory : AIFunction
             call.Status = "Done";
             _ctx.OnToolCallReceived?.Invoke(call);
 
-            // Using ValueTask.FromResult for a non-async path
-            return await ValueTask.FromResult($"Successfully created directory at '{relativePath}'.");
+            return $"Successfully created directory at '{relativePath}'.";
         }
         catch (Exception ex)
         {

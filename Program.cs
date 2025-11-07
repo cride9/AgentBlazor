@@ -13,12 +13,12 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton(sp =>
 {
     var chatClient = new ChatClient(
-        "hf.co/unsloth/aquif-3.5-Max-42B-A3B-GGUF:IQ4_NL",
+        "qwen3:30b-a3b-instruct-2507-q4_K_M",
         new ApiKeyCredential("sk-"),
         new OpenAIClientOptions
         {
-            Endpoint = new Uri("http://localhost:11434/v1"),
-            NetworkTimeout = TimeSpan.FromMinutes(10)
+            Endpoint = new Uri("http://26.86.240.240:11434/v1"),
+            NetworkTimeout = TimeSpan.FromMinutes(60),
         }
     ).AsIChatClient();
 

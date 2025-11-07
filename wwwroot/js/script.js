@@ -28,6 +28,9 @@ window.textAreaInterop = {
             element.style.height = 'auto'; // Reset height
             element.style.height = (element.scrollHeight) + 'px';
         }
+    },
+    blurElement: function (element) {
+        element?.blur();
     }
 };
 

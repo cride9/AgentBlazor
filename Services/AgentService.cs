@@ -1,8 +1,7 @@
-﻿using AgentBlazor.Services.AgentTools;
+﻿using AgentBlazor.Models;
+using AgentBlazor.Services.AgentTools;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using AgentBlazor.Models;
-using System.Linq;
 
 
 namespace AgentBlazor.Services;
@@ -16,6 +15,7 @@ public class AgentService
     private readonly AgentContext _context;
     public event OnChunkReceived? OnChunkReceived;
     public event OnToolCallReceived? OnToolCallReceived;
+    public event Action? OnNewLoop;
 
     public AgentService(IChatClient chatClient, AgentContext context)
     {
@@ -33,14 +33,13 @@ public class AgentService
                 Instructions = Instructions.Instruction,
                 ChatOptions = new ChatOptions
                 {
-                    AllowMultipleToolCalls = true,
+                    AllowMultipleToolCalls = false,
                     ToolMode = ChatToolMode.Auto,
                     Tools = new List<AITool> {
                         new CreateDirectory(_context),
                         new ExecuteCommand(_context),
                         new ListDirectory(_context),
                         new ReadFile(_context),
-                        new StopLoop(_context),
                         new WriteFile(_context),
                     },
                 },
@@ -51,19 +50,18 @@ public class AgentService
 
     public async Task RunAsync(string userInput, CancellationToken cancellationToken = default)
     {
+        OnNewLoop?.Invoke();
         _context.Initialize();
-        do
-        {
-            var stream = string.IsNullOrEmpty(userInput)
-                    ? _agent.RunStreamingAsync(_context.Thread, cancellationToken: _context.CancellationSource.Token)
-                    : _agent.RunStreamingAsync(userInput, _context.Thread, cancellationToken: _context.CancellationSource.Token);
 
-            await foreach (var chunk in stream)
-                OnChunkReceived?.Invoke(chunk.Text);
+        var stream = string.IsNullOrEmpty(userInput)
+                ? _agent.RunStreamingAsync(_context.Thread, cancellationToken: _context.CancellationSource.Token)
+                : _agent.RunStreamingAsync(userInput, _context.Thread, cancellationToken: _context.CancellationSource.Token);
 
-            userInput = string.Empty;
+        await foreach (var chunk in stream)
+            OnChunkReceived?.Invoke(chunk.Text);
 
-        } while (!_context.StopLoop);
+        userInput = string.Empty;
+
         _context.Reset();
     }
 }

@@ -1,29 +1,240 @@
 ﻿@page "/"
-@inject AgentService AgentService
+@inject IJSRuntime JSRuntime
 
-<div>
-	<InputText @bind-Value="input" placeholder="Type something..." />
-    <button @onclick="SendHello">Start task</button>
-    <div id="output">@output</div>
+<div class="relative bg-gray-100 dark:bg-[#161616] overflow-x-hidden custom-scrollbar">
+    <!-- Header -->
+    <header class="relative z-20 container mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <img class="w-10 h-10 rounded-full" src="evaLogoTransparent.png" alt="EVA Logo">
+                <p class="bg-gradient-to-r from-purple-600 to-blue-500 dark:from-white dark:to-[#dcd0ff] bg-clip-text text-transparent text-2xl font-bold">EVA Agent</p>
+            </div>
+            <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+                <a href="#features" class="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Features</a>
+                <a href="#faq" class="text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">FAQ</a>
+                <a href="/chat" class="px-4 py-2 bg-purple-600 text-white rounded-full text-sm font-medium hover:bg-purple-700 transition-colors">Start Free</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Sticky CTA Bar (Mobile & Desktop) -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white dark:bg-[#161616] border-t border-gray-200 dark:border-[#3d3d3d] p-4 shadow-lg">
+        <a href="/chat" class="block w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white text-center font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:scale-102 transition-all duration-300">
+            🚀 Start Your Free AI Assistant Now
+        </a>
+    </div>
+
+    <main class="custom-scrollbar">
+        <!-- Hero Section -->
+        <section class="relative h-screen flex items-center justify-center text-center px-6">
+            <!-- Canvas Background -->
+            <canvas id="hero-canvas" class="absolute top-0 left-0 w-full h-full z-0"></canvas>
+
+            <!-- Hero Content -->
+            <div class="relative z-10 max-w-4xl mx-auto">
+                <img class="w-28 h-28 md:w-36 md:h-36 mx-auto mb-6 drop-shadow-2xl rounded-full border-4 border-white dark:border-[#161616] shadow-lg" src="evaLogoTransparent.png" alt="EVA Logo Large">
+
+                <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-800 dark:text-white mb-4">
+                    <span class="bg-gradient-to-r from-purple-600 to-blue-500 dark:from-white dark:to-[#dcd0ff] bg-clip-text text-transparent">
+                        Your AI Agent That Does More Than Chat.
+                    </span>
+                </h1>
+
+                <p class="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-gray-200 dark:text-gray-300 leading-relaxed">
+                    EVA doesn’t just answer questions — it <strong>acts</strong>. It creates folders, runs commands, reads files, writes code, and automates your workflow — all through natural conversation.
+                </p>
+
+                <!-- Trust Badges -->
+                <div class="flex flex-wrap justify-center gap-4 mt-8 text-sm text-gray-400 dark:text-gray-500">
+                    <span class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        Secure & Private
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        No Data Stored
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        10,000+ Users Trusted
+                    </span>
+                </div>
+
+                <!-- Primary CTA -->
+                <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+                    <a href="/chat" class="inline-flex items-center justify-center gap-3 px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-500 rounded-full hover:from-purple-700 hover:to-blue-600 dark:bg-[#6c667e] dark:hover:bg-[#5a5570] transition-all duration-300 transform hover:scale-105 shadow-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                        Start Free Trial →
+                    </a>
+                    <a href="#features" class="inline-flex items-center justify-center gap-2 px-8 py-4 text-lg font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1f1f1f] rounded-full hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition-all duration-300 shadow-md border border-gray-200 dark:border-[#3d3d3d]">
+                        See How It Works
+                    </a>
+                </div>
+
+                <!-- Subtle Stat -->
+                <p class="mt-6 text-sm text-gray-400 dark:text-gray-500">
+                    ✨ No credit card required. Instant access. <strong>50+ tool integrations</strong> — and growing.
+                </p>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="relative z-10 py-20 bg-gray-100 dark:bg-[#161616]">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white">Powerful Tools. Zero Coding.</h2>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-gray-500 dark:text-gray-400">
+                        EVA integrates with your system using real file system and shell commands — no APIs needed. Just talk, and let EVA act.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Tool: Create Directory -->
+                    <div class="bg-white dark:bg-[#1f1f1f] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="w-14 h-14 bg-purple-100 dark:bg-[#6c667e] rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-600 dark:text-purple-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Create Folders</h3>
+                        <p class="text-gray-500 dark:text-gray-400">Say “Create a folder called ‘ProjectX’” — and EVA builds it instantly.</p>
+                        <div class="mt-4 inline-flex items-center px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs rounded-full font-medium">
+                            🛠️ Built-in
+                        </div>
+                    </div>
+
+                    <!-- Tool: Execute Command -->
+                    <div class="bg-white dark:bg-[#1f1f1f] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="w-14 h-14 bg-purple-100 dark:bg-[#6c667e] rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-600 dark:text-purple-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 16l4-16M6 9h14M4 15h14" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Run Terminal Commands</h3>
+                        <p class="text-gray-500 dark:text-gray-400">Ask EVA to “git commit -m ‘update’” or “npm install” — it executes safely in your environment.</p>
+                        <div class="mt-4 inline-flex items-center px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs rounded-full font-medium">
+                            🖥️ Real System
+                        </div>
+                    </div>
+
+                    <!-- Tool: List Directory -->
+                    <div class="bg-white dark:bg-[#1f1f1f] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="w-14 h-14 bg-purple-100 dark:bg-[#6c667e] rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-600 dark:text-purple-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Browse Files & Folders</h3>
+                        <p class="text-gray-500 dark:text-gray-400">Ask “Show me my documents” — EVA lists contents like a pro assistant.</p>
+                        <div class="mt-4 inline-flex items-center px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs rounded-full font-medium">
+                            🔍 Instant View
+                        </div>
+                    </div>
+
+                    <!-- Tool: Read File -->
+                    <div class="bg-white dark:bg-[#1f1f1f] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="w-14 h-14 bg-purple-100 dark:bg-[#6c667e] rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-600 dark:text-purple-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Read Any File</h3>
+                        <p class="text-gray-500 dark:text-gray-400">“What’s in config.json?” — EVA reads, summarizes, and explains code or logs.</p>
+                        <div class="mt-4 inline-flex items-center px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs rounded-full font-medium">
+                            📄 Smart Parsing
+                        </div>
+                    </div>
+
+                    <!-- Tool: Write File -->
+                    <div class="bg-white dark:bg-[#1f1f1f] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="w-14 h-14 bg-purple-100 dark:bg-[#6c667e] rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-600 dark:text-purple-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Write & Edit Files</h3>
+                        <p class="text-gray-500 dark:text-gray-400">“Write a README.md for my project” — EVA generates clean, professional content.</p>
+                        <div class="mt-4 inline-flex items-center px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs rounded-full font-medium">
+                            ✍️ AI-Powered
+                        </div>
+                    </div>
+
+                    <!-- Future Tool: Search Web -->
+                    <div class="bg-white dark:bg-[#1f1f1f] p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="w-14 h-14 bg-purple-100 dark:bg-[#6c667e] rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-purple-600 dark:text-purple-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-white">Search the Web (Coming Soon)</h3>
+                        <p class="text-gray-500 dark:text-gray-400">Ask EVA to “Find the latest React docs” — real-time web search with citations.</p>
+                        <div class="mt-4 inline-flex items-center px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300 text-xs rounded-full font-medium">
+                            🚀 Coming Soon
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="relative z-10 py-20 bg-gray-100 dark:bg-[#161616]">
+            <div class="container mx-auto px-6 max-w-4xl">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Frequently Asked Questions</h2>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d]">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Is EVA safe to run on my machine?</h3>
+                        <p class="mt-2 text-gray-600 dark:text-gray-300">Yes. EVA runs locally with strict permissions. It only executes commands you authorize and never sends your data to external servers.</p>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d]">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Do I need to install anything?</h3>
+                        <p class="mt-2 text-gray-600 dark:text-gray-300">No. EVA is a web app that works out-of-the-box on all browser</p>
+                    </div>
+
+                    <div class="bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-[#3d3d3d]">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Can I use it for work?</h3>
+                        <p class="mt-2 text-gray-600 dark:text-gray-300">Absolutely. Many teams use EVA for automating deployments, documentation, and daily tasks. Enterprise plans coming soon.</p>
+                    </div>
+                </div>
+
+                <div class="text-center mt-12">
+                    <p class="text-gray-500 dark:text-gray-400">Still have questions? <a href="/chat" class="text-purple-600 dark:text-purple-400 font-medium hover:underline">Try it out</a>.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 container mx-auto px-6 py-12 text-center bg-gray-100 dark:bg-[#161616] border-t border-gray-200 dark:border-[#3d3d3d]">
+        <div class="flex flex-col md:flex-row justify-center items-center gap-8 mb-6">
+            <div class="flex items-center gap-2">
+                <img class="w-8 h-8" src="evaLogoTransparent.png" alt="EVA Logo">
+                <p class="bg-gradient-to-r from-purple-600 to-blue-500 dark:from-white dark:to-[#dcd0ff] bg-clip-text text-transparent font-bold">EVA Agent</p>
+            </div>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">
+            © @DateTime.Now.Year EVA Agent. All rights reserved. <span class="text-xs opacity-70">Built with ❤️ for creators.</span>
+        </p>
+    </footer>
 </div>
 
 @code {
-    private string output = "";
-    private string input = "";
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        AgentService.OnChunkReceived += OnChunkReceivedHandler;
-    }
-
-    private void OnChunkReceivedHandler(string chunk)
-    {
-        output += chunk;
-        StateHasChanged();
-    }
-
-    private async Task SendHello()
-    {
-        await AgentService.RunAsync("Hello");
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("initHeroAnimation");
+        }
     }
 }

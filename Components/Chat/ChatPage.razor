@@ -13,6 +13,7 @@
 </div>
 
 @code {
+
     private string currentTheme = "light";
     private bool isSidebarExpandedOnMobile = false;
     private DotNetObjectReference<ChatPage>? objRef;
@@ -28,7 +29,22 @@
     {
         objRef = DotNetObjectReference.Create(this);
         AgentService.OnChunkReceived += OnChunkReceivedHandler;
+        AgentService.OnNewLoop += OnNewLoop;
         AgentService.OnToolCallReceived += OnToolCallReceivedHandler;
+    }
+
+    private void OnNewLoop()
+    {
+        currentAgentMessage = new ChatMessageModel
+        {
+            IsUserMessage = false,
+            AvatarUrl = "evaLogoTransparent.png",
+            Timestamp = DateTime.Now.ToShortTimeString(),
+            IsStreaming = true
+        };
+
+        messages.Add(currentAgentMessage);
+        InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -49,15 +65,6 @@
             Text = messageText,
             Timestamp = DateTime.Now.ToShortTimeString()
         });
-
-        currentAgentMessage = new ChatMessageModel
-        {
-            IsUserMessage = false,
-            AvatarUrl = "evaLogoTransparent.png",
-            Timestamp = DateTime.Now.ToShortTimeString(),
-            IsStreaming = true
-        };
-        messages.Add(currentAgentMessage);
 
         StateHasChanged();
 
@@ -94,6 +101,8 @@
             else
             {
                 currentAgentMessage.ToolCalls[existingToolCall].Status = toolCall.Status;
+                currentAgentMessage.Text.Trim();
+                OnNewLoop();
             }
 
             InvokeAsync(StateHasChanged);
