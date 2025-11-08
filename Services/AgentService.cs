@@ -2,6 +2,7 @@
 using AgentBlazor.Services.AgentTools;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using System.Text.Json;
 
 
 namespace AgentBlazor.Services;
@@ -48,11 +49,41 @@ public class AgentService
                 },
             }
         );
+    }
+
+    public void StartNewThread()
+    {
         _context.Thread = _agent.GetNewThread();
     }
 
-    public async Task RunAsync(string userInput, CancellationToken cancellationToken = default)
+    public void LoadThreadFromJsonAsync(string? threadStateJson)
     {
+        if (string.IsNullOrEmpty(threadStateJson))
+        {
+            StartNewThread();
+            return;
+        }
+
+        try
+        {
+            var serializedThread = JsonDocument.Parse(threadStateJson).RootElement;
+            _context.Thread = _agent.DeserializeThread(serializedThread);
+        }
+        catch (Exception ex)
+        {
+            // Log the error and fall back to a new thread
+            Console.WriteLine($"Error deserializing thread, starting new one: {ex.Message}");
+            StartNewThread();
+        }
+    }
+
+    public async Task<JsonElement> RunAsync(string userInput, CancellationToken cancellationToken = default)
+    {
+        if (_context.Thread == null)
+        {
+            throw new InvalidOperationException("Agent thread has not been initialized. Call StartNewThread or LoadThreadFromJsonAsync first.");
+        }
+
         OnNewLoop?.Invoke();
         _context.Initialize();
 
@@ -66,6 +97,7 @@ public class AgentService
         userInput = string.Empty;
 
         _context.Reset();
+        return _context.Thread.Serialize();
     }
 }
 

@@ -1,50 +1,124 @@
 ﻿@page "/chat"
+@using System.Text
 @inject IJSRuntime JSRuntime
 @inject AgentService AgentService
+@inject ChatHistoryService HistoryService
 @implements IAsyncDisposable
 
 <div class="@MainGridCssClass">
     <Sidebar CurrentTheme="@currentTheme"
              IsSidebarExpandedOnMobile="@isSidebarExpandedOnMobile"
              OnThemeToggle="ToggleTheme"
-             OnHistoryToggle="ToggleHistory" />
+             OnHistoryToggle="ToggleHistory" 
+             Sessions="@sessions"
+             CurrentSessionId="@currentSessionId"
+             OnNewChat="StartNewChatAsync"
+             OnLoadChat="LoadChatSessionAsync"/>
 
     <ChatView Messages="@messages" OnSendMessage="HandleSendMessage" />
 </div>
 
 @code {
 
+    private Guid currentSessionId;
+    private List<ChatSession> sessions = new();
+    private CancellationTokenSource _cts;
+
     private string currentTheme = "light";
     private bool isSidebarExpandedOnMobile = false;
     private DotNetObjectReference<ChatPage>? objRef;
     private string MainGridCssClass =>
-        new System.Text.StringBuilder("grid grid-cols-1 md:grid-cols-[260px_1fr] h-full transition-all duration-300 ease-in-out ")
+        new StringBuilder("grid grid-cols-1 md:grid-cols-[260px_1fr] h-full transition-all duration-300 ease-in-out ")
         .Append(isSidebarExpandedOnMobile ? "grid-rows-[1fr_min-content]" : "grid-rows-[68px_1fr] md:grid-rows-1")
         .ToString();
 
     private List<ChatMessageModel> messages = new();
     private ChatMessageModel? currentAgentMessage;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         objRef = DotNetObjectReference.Create(this);
         AgentService.OnChunkReceived += OnChunkReceivedHandler;
         AgentService.OnNewLoop += OnNewLoop;
         AgentService.OnToolCallReceived += OnToolCallReceivedHandler;
+
+        await LoadSessionsAsync();
+        if (sessions.Any())
+        {
+            await LoadChatSessionAsync(sessions.First().Id);
+        }
+        else
+        {
+            await StartNewChatAsync();
+        }
+	}
+
+    private async Task LoadSessionsAsync()
+    {
+        sessions = await HistoryService.GetSessionsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StartNewChatAsync()
+    {
+        var newSession = await HistoryService.CreateNewSessionAsync();
+        currentSessionId = newSession.Id;
+        messages.Clear();
+
+        AgentService.StartNewThread();
+
+        await LoadSessionsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadChatSessionAsync(Guid sessionId)
+    {
+        try
+        {
+            messages.Clear();
+            await InvokeAsync(StateHasChanged);
+
+            currentSessionId = sessionId;
+        
+            messages = await HistoryService.GetMessagesForSessionAsync(sessionId);
+
+            var threadStateJson = await HistoryService.GetSessionThreadStateAsync(sessionId);
+        
+            AgentService.LoadThreadFromJsonAsync(threadStateJson);
+        
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"FATAL ERROR loading chat session {sessionId}: {ex}");
+        
+            messages.Clear();
+            messages.Add(new ChatMessageModel 
+            { 
+                IsUserMessage = false, 
+                Text = $"Error: Could not load chat session. Please start a new chat. Details: {ex.Message}",
+                Timestamp = DateTime.Now.ToShortTimeString(),
+                AvatarUrl = "evaLogoTransparent.png"
+            });
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void OnNewLoop()
     {
-        currentAgentMessage = new ChatMessageModel
+        InvokeAsync(() =>
         {
-            IsUserMessage = false,
-            AvatarUrl = "evaLogoTransparent.png",
-            Timestamp = DateTime.Now.ToShortTimeString(),
-            IsStreaming = true
-        };
+            currentAgentMessage = new ChatMessageModel
+            {
+                IsUserMessage = false,
+                AvatarUrl = "evaLogoTransparent.png",
+                Timestamp = DateTime.Now.ToShortTimeString(),
+                IsStreaming = true
+            };
 
-        messages.Add(currentAgentMessage);
-        InvokeAsync(StateHasChanged);
+            messages.Add(currentAgentMessage);
+            StateHasChanged();
+        });
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -59,54 +133,77 @@
 
     private async Task HandleSendMessage(string messageText)
     {
-        messages.Add(new ChatMessageModel
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+
+        StateHasChanged();
+
+        var userMessage = new ChatMessageModel
         {
             IsUserMessage = true,
             Text = messageText,
             Timestamp = DateTime.Now.ToShortTimeString()
-        });
-
+        };
+        messages.Add(userMessage);
+        await HistoryService.SaveMessageAsync(currentSessionId, userMessage);
         StateHasChanged();
 
-        await AgentService.RunAsync(messageText);
+        var updatedThreadState = await AgentService.RunAsync(messageText, _cts.Token);
+        await HistoryService.UpdateSessionThreadStateAsync(currentSessionId, updatedThreadState);
 
         if (currentAgentMessage != null)
         {
             currentAgentMessage.IsStreaming = false;
+
+            if (messages.Count(m => m.IsUserMessage) == 1) // First user message
+            {
+                var title = messageText.Length > 30 ? messageText.Substring(0, 30) + "..." : messageText;
+                await HistoryService.UpdateSessionTitleAsync(currentSessionId, title);
+                await LoadSessionsAsync();
+            }
+
+            // Save the visible agent message to the DB for fast UI loading.
+            await HistoryService.SaveMessageAsync(currentSessionId, currentAgentMessage);
+            currentAgentMessage = null;
             StateHasChanged();
         }
     }
 
     private void OnChunkReceivedHandler(string chunk)
     {
-        if (currentAgentMessage != null)
+        InvokeAsync(() =>
         {
-            currentAgentMessage.Text += chunk;
-
-            InvokeAsync(StateHasChanged);
-        }
+            if (currentAgentMessage != null)
+            {
+                currentAgentMessage.Text += chunk;
+                StateHasChanged(); // StateHasChanged should also be inside.
+            }
+        });
     }
 
     private void OnToolCallReceivedHandler(ToolCallModel toolCall)
     {
-        if (currentAgentMessage != null)
+        InvokeAsync(() =>
         {
-            var existingToolCall = currentAgentMessage.ToolCalls
-                .FindIndex(tc => tc.Id == toolCall.Id);
-
-            if (existingToolCall == -1)
+            if (currentAgentMessage != null)
             {
-                currentAgentMessage.ToolCalls.Add(toolCall);
-            }
-            else
-            {
-                currentAgentMessage.ToolCalls[existingToolCall].Status = toolCall.Status;
-                currentAgentMessage.Text.Trim();
-                OnNewLoop();
-            }
+                var existingToolCall = currentAgentMessage.ToolCalls
+                    .FindIndex(tc => tc.Id == toolCall.Id);
 
-            InvokeAsync(StateHasChanged);
-        }
+                if (existingToolCall == -1)
+                {
+                    currentAgentMessage.ToolCalls.Add(toolCall);
+                }
+                else
+                {
+                    currentAgentMessage.ToolCalls[existingToolCall].Status = toolCall.Status;
+                    currentAgentMessage.Text.Trim();
+                    OnNewLoop(); // Calling another method that updates UI is now safe
+                }
+
+                StateHasChanged();
+            }
+        });
     }
 
 

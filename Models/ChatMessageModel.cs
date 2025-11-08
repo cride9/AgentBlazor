@@ -2,7 +2,8 @@
 
 public class ChatMessageModel
 {
-    public Guid Id { get; } = Guid.NewGuid();
+    public int MessageDbId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public bool IsUserMessage { get; set; }
     public string Text { get; set; } = string.Empty;
     public string Timestamp { get; set; }

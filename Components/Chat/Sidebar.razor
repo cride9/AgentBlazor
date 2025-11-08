@@ -13,34 +13,40 @@
             </button>
         </div>
 
+        <div class="p-2">
+            <button @onclick="OnNewChat" class="w-full flex items-center justify-center p-3 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                <span class="font-semibold">New Chat</span>
+            </button>
+        </div>
+
         <!-- Chat History (conditionally rendered on mobile) -->
         <div class="px-2 flex-grow overflow-y-auto custom-scrollbar @(IsSidebarExpandedOnMobile ? "block" : "hidden md:block")">
             <ul class="space-y-1">
-                <!-- Hardcoded for demonstration -->
-                <li>
-                    <h3 class="sidebar-text text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2 transition-opacity duration-200">Today</h3>
-                </li>
-                <li>
-                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 bg-purple-100 dark:bg-[#6c667e] text-purple-700 dark:text-white font-semibold transition-colors">
-                        <ChatIcon />
-                        <span class="sidebar-text truncate transition-opacity duration-200">Exploring Tailwind CSS for Chat UIs</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-100/20 font-semibold transition-colors">
-                        <ChatIcon />
-                        <span class="sidebar-text truncate transition-opacity duration-200">Implementing Light/Dark Mode</span>
-                    </a>
-                </li>
-                <li>
-                    <h3 class="sidebar-text text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2 transition-opacity duration-200">Yesterday</h3>
-                </li>
-                <li>
-                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-purple-100/20 font-semibold transition-colors">
-                        <ChatIcon />
-                        <span class="sidebar-text truncate transition-opacity duration-200">Future of AI Assistants</span>
-                    </a>
-                </li>
+                @if (Sessions.Any())
+                {
+                    @foreach (var session in Sessions)
+                    {
+                        var isActive = session.Id == CurrentSessionId;
+                        var cssClass = isActive
+                        ? "bg-purple-100 dark:bg-[#6c667e] text-purple-700 dark:text-white font-semibold"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-100/20 font-semibold";
+
+                        <li>
+                            <a @onclick="() => OnLoadChat.InvokeAsync(session.Id)"
+                               class="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors cursor-pointer @cssClass">
+                                <ChatIcon />
+                                <span class="sidebar-text truncate transition-opacity duration-200">@session.Title</span>
+                            </a>
+                        </li>
+                    }
+                }
+                else
+                {
+                    <li class="p-3 text-sm text-gray-500 dark:text-gray-400">No chat history yet. Start a new chat!</li>
+                }
             </ul>
         </div>
     </div>
@@ -56,15 +62,12 @@
 </div>
 
 @code {
-    [Parameter]
-    public string CurrentTheme { get; set; } = "light";
-
-    [Parameter]
-    public bool IsSidebarExpandedOnMobile { get; set; }
-
-    [Parameter]
-    public EventCallback OnThemeToggle { get; set; }
-
-    [Parameter]
-    public EventCallback OnHistoryToggle { get; set; }
+    [Parameter] public string CurrentTheme { get; set; } = "light";
+    [Parameter] public bool IsSidebarExpandedOnMobile { get; set; }
+    [Parameter] public EventCallback OnThemeToggle { get; set; }
+    [Parameter] public EventCallback OnHistoryToggle { get; set; }
+    [Parameter] public List<ChatSession> Sessions { get; set; } = new();
+    [Parameter] public Guid CurrentSessionId { get; set; }
+    [Parameter] public EventCallback OnNewChat { get; set; }
+    [Parameter] public EventCallback<Guid> OnLoadChat { get; set; }
 }
