@@ -94,7 +94,7 @@
         }
         else
         {
-            currentMessage = $"File '{result}' uploaded. You can now ask me to use it.";
+            //currentMessage = $"File '{result}' uploaded. You can now ask me to use it.";
         }
         await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textAreaInputRef?.Element);
         await InvokeAsync(StateHasChanged);

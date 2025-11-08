@@ -15,14 +15,20 @@ public class ChatHistoryService
     }
 
     // 1. Create a new session
-    public async Task<ChatSession> CreateNewSessionAsync()
+    public async Task<ChatSession> CreateNewSessionAsync(Guid agentContextId)
     {
-        var session = new ChatSession();
+        var session = new ChatSession
+        {
+            AgentContextId = agentContextId
+        };
         _context.ChatSessions.Add(session);
         await _context.SaveChangesAsync();
         return session;
     }
-
+    public async Task<ChatSession?> GetSessionAsync(Guid sessionId)
+    {
+        return await _context.ChatSessions.FindAsync(sessionId);
+    }
     // 2. Get all sessions for the sidebar
     public async Task<List<ChatSession>> GetSessionsAsync()
     {

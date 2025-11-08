@@ -13,6 +13,7 @@ public class ChatSession
     public string Title { get; set; } = "New Chat";
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public Guid AgentContextId { get; set; }
 
     // ++ ADD THIS PROPERTY ++
     // This will store the serialized AgentThread as a JSON string.

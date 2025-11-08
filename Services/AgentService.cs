@@ -51,16 +51,25 @@ public class AgentService
         );
     }
 
+    public Guid GetCurrentContextId() => _context.AgentGuid;
     public void StartNewThread()
     {
+        _context.ResetContext();
         _context.Thread = _agent.GetNewThread();
     }
 
-    public void LoadThreadFromJsonAsync(string? threadStateJson)
+    public void LoadThread(string? threadStateJson, Guid agentContextId)
     {
+        if (agentContextId != Guid.Empty)
+        {
+            _context.SetContextId(agentContextId);
+        }
+
         if (string.IsNullOrEmpty(threadStateJson))
         {
             StartNewThread();
+            // If there's no thread state, we still respect the contextId but get a new thread
+            _context.Thread = _agent.GetNewThread();
             return;
         }
 
@@ -74,6 +83,7 @@ public class AgentService
             // Log the error and fall back to a new thread
             Console.WriteLine($"Error deserializing thread, starting new one: {ex.Message}");
             StartNewThread();
+            _context.Thread = _agent.GetNewThread(); // Fallback to a new thread in the correct context
         }
     }
 
@@ -132,12 +142,28 @@ public class AgentService
 public class AgentContext
 {
     public string WorkingDirectory { get; set; }
-    public Guid AgentGuid { get; } = Guid.NewGuid();
+    public Guid AgentGuid { get; private set; } = Guid.NewGuid();
     public bool StopLoop { get; set; } = false;
     public AgentThread Thread { get; set; }
     public Action<ToolCallModel>? OnToolCallReceived { get; set; }
     public CancellationTokenSource CancellationSource { get; private set; }
+
     private bool initialized = false;
+
+    public void ResetContext()
+    {
+        AgentGuid = Guid.NewGuid();
+        initialized = false;
+    }
+
+    public void SetContextId(Guid contextId)
+    {
+        if (contextId != Guid.Empty && AgentGuid != contextId)
+        {
+            AgentGuid = contextId;
+            initialized = false;
+        }
+    }
 
     public void Initialize()
     {

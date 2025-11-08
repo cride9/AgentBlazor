@@ -51,7 +51,7 @@
         {
             await StartNewChatAsync();
         }
-	}
+    }
 
     private async Task LoadSessionsAsync()
     {
@@ -61,11 +61,11 @@
 
     private async Task StartNewChatAsync()
     {
-        var newSession = await HistoryService.CreateNewSessionAsync();
-        currentSessionId = newSession.Id;
         messages.Clear();
-
         AgentService.StartNewThread();
+        var agentContextId = AgentService.GetCurrentContextId();
+        var newSession = await HistoryService.CreateNewSessionAsync(agentContextId);
+        currentSessionId = newSession.Id;
 
         await LoadSessionsAsync();
         await InvokeAsync(StateHasChanged);
@@ -79,13 +79,18 @@
             await InvokeAsync(StateHasChanged);
 
             currentSessionId = sessionId;
-        
+
+            var session = await HistoryService.GetSessionAsync(sessionId);
+            if (session == null)
+            {
+                Console.WriteLine($"FATAL ERROR: Could not find session {sessionId}. Starting new chat.");
+                await StartNewChatAsync();
+                return;
+            }
+
+            AgentService.LoadThread(session.ThreadStateJson, session.AgentContextId);
             messages = await HistoryService.GetMessagesForSessionAsync(sessionId);
 
-            var threadStateJson = await HistoryService.GetSessionThreadStateAsync(sessionId);
-        
-            AgentService.LoadThreadFromJsonAsync(threadStateJson);
-        
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
