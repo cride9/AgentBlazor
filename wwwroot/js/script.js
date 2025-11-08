@@ -64,3 +64,47 @@ window.resizeInterop = {
         }
     }
 };
+
+window.fileDropInterop = {
+    initialize: (dropZoneElement, dotNetHelper) => {
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZoneElement.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // Set state on drag enter
+        dropZoneElement.addEventListener('dragenter', () => {
+            dotNetHelper.invokeMethodAsync('SetDragOver', true);
+        });
+
+        // Unset state on drag leave
+        dropZoneElement.addEventListener('dragleave', e => {
+            if (!dropZoneElement.contains(e.relatedTarget)) {
+                dotNetHelper.invokeMethodAsync('SetDragOver', false);
+            }
+        });
+
+        // Handle the file drop
+        dropZoneElement.addEventListener('drop', async e => {
+            dotNetHelper.invokeMethodAsync('SetDragOver', false);
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // We'll just handle the first file for simplicity
+                const file = files[0];
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    const arrayBuffer = reader.result;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    dotNetHelper.invokeMethodAsync('HandleFileDrop', file.name, uint8Array);
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+        });
+    }
+};

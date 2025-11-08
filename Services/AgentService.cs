@@ -99,6 +99,34 @@ public class AgentService
         _context.Reset();
         return _context.Thread.Serialize();
     }
+
+    public async Task<string> SaveFileToAgentDirectoryAsync(string fileName, byte[] content)
+    {
+        _context.Initialize(); // Ensures the directory is ready.
+
+        if (string.IsNullOrEmpty(_context.WorkingDirectory) || !Directory.Exists(_context.WorkingDirectory))
+        {
+            return "Error: Agent working directory could not be created.";
+        }
+
+        try
+        {
+            // Sanitize filename to prevent path traversal attacks
+            var sanitizedFileName = Path.GetFileName(fileName);
+            if (string.IsNullOrEmpty(sanitizedFileName))
+            {
+                return "Error: Invalid file name.";
+            }
+
+            var path = Path.Combine(_context.WorkingDirectory, sanitizedFileName);
+            await File.WriteAllBytesAsync(path, content);
+            return sanitizedFileName;
+        }
+        catch (Exception ex)
+        {
+            return $"Error: {ex.Message}";
+        }
+    }
 }
 
 public class AgentContext

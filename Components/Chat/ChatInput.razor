@@ -1,4 +1,7 @@
 ﻿@inject IJSRuntime JSRuntime
+@inject AgentService AgentService
+@implements IAsyncDisposable
+@using System.Text
 
 <div class="flex justify-center w-full">
     <div class="relative w-full max-w-3xl">
@@ -12,12 +15,26 @@
             </div>
         }
 
-        <div class="flex flex-col border bg-white dark:bg-[#2b2b2b] shadow-lg dark:drop-shadow-[0_15px_35px_rgba(220,208,255,0.15)] border-gray-300 dark:border-[#353535] rounded-2xl p-2 max-h-[50vh] overflow-y-auto custom-scrollbar">
+        <div @ref="dropZoneElement" class="@DropZoneCssClass">
+            @if (isDragOver)
+            {
+                <div class="@(isDragOver ? "overflow-hidden" : "overflow-auto") absolute inset-0 bg-purple-100/50 dark:bg-purple-900/50 flex items-center justify-center rounded-2xl pointer-events-none z-10 border-2 border-dashed border-purple-500 dark:border-purple-400 backdrop-blur-sm">
+                    <div class="text-center p-4 scale-75">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/20 mb-3">
+                            <svg class="w-8 h-8 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <p class="font-bold text-lg text-purple-600 dark:text-purple-300 mb-1">Drop file to upload</p>
+                    </div>
+                </div>
+            }
+
             <InputTextArea @ref="textAreaInputRef"
                            @onkeydown="HandleKeyDown"
                            @oninput="HandleInput"
                            @bind-Value="currentMessage"
-                           class="custom-scrollbar flex-grow outline-0 bg-transparent caret-purple-500 dark:caret-[#dcd0ff] w-full resize-none text-base placeholder-gray-500 dark:placeholder-gray-400 p-2"
+                           class=@($"{(isDragOver ? "overflow-hidden" : "overflow-auto")} custom-scrollbar flex-grow outline-0 bg-transparent caret-purple-500 dark:caret-[#dcd0ff] w-full resize-none text-base placeholder-gray-500 dark:placeholder-gray-400 p-2")
                            rows="1"
                            placeholder="Message EVA...">
             </InputTextArea>
@@ -40,11 +57,58 @@
     private InputTextArea? textAreaInputRef;
     private bool IsDisabled = false;
 
+    private ElementReference dropZoneElement;
+    private DotNetObjectReference<ChatInput>? objRef;
+    private bool isDragOver;
+    private string DropZoneCssClass => new StringBuilder("relative flex flex-col border bg-white dark:bg-[#2b2b2b] shadow-lg dark:drop-shadow-[0_15px_35px_rgba(220,208,255,0.15)] rounded-2xl p-2 max-h-[50vh] overflow-y-auto custom-scrollbar transition-colors duration-200 ")
+        .Append(isDragOver ? "border-purple-500 dark:border-purple-400" : "border-gray-300 dark:border-[#353535]")
+        .ToString();
+
     [Parameter]
     public bool ShowIntro { get; set; }
 
     [Parameter]
     public EventCallback<string> OnSendMessage { get; set; }
+
+    [Parameter]
+    public EventCallback OnFileUpload { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("fileDropInterop.initialize", dropZoneElement, objRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleFileDrop(string fileName, byte[] fileContent)
+    {
+        await OnFileUpload.InvokeAsync(); // Tell parent to ensure session is active
+
+        var result = await AgentService.SaveFileToAgentDirectoryAsync(fileName, fileContent);
+        if (result.StartsWith("Error:"))
+        {
+            currentMessage = result;
+        }
+        else
+        {
+            currentMessage = $"File '{result}' uploaded. You can now ask me to use it.";
+        }
+        await JSRuntime.InvokeVoidAsync("textAreaInterop.autoResize", textAreaInputRef?.Element);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void SetDragOver(bool value)
+    {
+        if (isDragOver != value)
+        {
+            isDragOver = value;
+            StateHasChanged();
+        }
+    }
 
     private async Task HandleInput(ChangeEventArgs e)
     {
@@ -79,5 +143,13 @@
 
         await OnSendMessage.InvokeAsync(message);
         IsDisabled = false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
+        {
+            objRef.Dispose();
+        }
     }
 }

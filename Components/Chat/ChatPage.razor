@@ -237,4 +237,12 @@
             objRef.Dispose();
         }
     }
+
+    private async Task HandleFileUpload()
+    {
+        if (!messages.Any())
+        {
+            await StartNewChatAsync();
+        }
+    }
 }

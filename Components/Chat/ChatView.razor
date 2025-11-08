@@ -20,7 +20,7 @@
 
     <!-- Input Area -->
     <div class="absolute flex flex-col justify-end p-4 md:p-10 bottom-0 w-full">
-        <ChatInput OnSendMessage="OnSendMessage" ShowIntro="Messages.Count == 0" />
+        <ChatInput OnSendMessage="OnSendMessage" ShowIntro="Messages.Count == 0" OnFileUpload="OnFileUpload" />
     </div>
 </div>
 
@@ -30,4 +30,7 @@
 
     [Parameter]
     public EventCallback<string> OnSendMessage { get; set; }
+    
+    [Parameter]
+    public EventCallback OnFileUpload { get; set; }
 }
