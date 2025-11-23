@@ -43,8 +43,10 @@ public class AgentService
                         new GetTextFromWebPage(_context),
                         new ListDirectory(_context),
                         new ReadFile(_context),
+                        new SendInput(_context),
                         new WebSearch(_context),
                         new WriteFile(_context),
+                        new LessonAgent(_chatClient, _context).AsAIFunction(),
                     },
                 },
             }
@@ -147,6 +149,7 @@ public class AgentContext
     public AgentThread Thread { get; set; }
     public Action<ToolCallModel>? OnToolCallReceived { get; set; }
     public CancellationTokenSource CancellationSource { get; private set; }
+    public TerminalSession? Terminal { get; set; }
 
     private bool initialized = false;
 

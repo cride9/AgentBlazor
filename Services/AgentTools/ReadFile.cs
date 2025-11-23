@@ -1,6 +1,8 @@
 ﻿using AgentBlazor.Models;
 using Microsoft.Extensions.AI;
+using System.Text;
 using System.Text.Json;
+using UglyToad.PdfPig;
 
 namespace AgentBlazor.Services.AgentTools;
 
@@ -53,7 +55,7 @@ public class ReadFile : AIFunction
             string fullPath = Path.GetFullPath(Path.Combine(_ctx.WorkingDirectory, relativePath));
 
             // SECURITY: Ensure the path is within the agent's working directory.
-            if (!fullPath.Contains(_ctx.WorkingDirectory))
+            if (!fullPath.StartsWith(_ctx.WorkingDirectory, StringComparison.OrdinalIgnoreCase))
             {
                 call.Status = "Error";
                 _ctx.OnToolCallReceived?.Invoke(call);
@@ -67,7 +69,17 @@ public class ReadFile : AIFunction
                 return $"Error: File not found at '{relativePath}'.";
             }
 
-            string content = await File.ReadAllTextAsync(fullPath, cancellationToken);
+            string content;
+
+            // Detect PDF files
+            if (Path.GetExtension(fullPath).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                content = await _ReadTextFromPDF(fullPath, _ctx.WorkingDirectory);
+            }
+            else
+            {
+                content = await File.ReadAllTextAsync(fullPath, cancellationToken);
+            }
 
             call.Status = "Done";
             _ctx.OnToolCallReceived?.Invoke(call);
@@ -80,5 +92,31 @@ public class ReadFile : AIFunction
             _ctx.OnToolCallReceived?.Invoke(call);
             return $"Error reading file: {ex.Message}";
         }
+    }
+
+    // PDF reading method
+    private Task<string> _ReadTextFromPDF(string filename, string cwd)
+    {
+        var filePath = filename;
+        if (!File.Exists(filePath))
+            return Task.FromResult($"File \"{filename}\" does not exist.");
+
+        using var document = PdfDocument.Open(filePath);
+        StringBuilder sb = new();
+        foreach (var page in document.GetPages())
+        {
+            double? lastY = null;
+            foreach (var word in page.GetWords())
+            {
+                var y = word.BoundingBox.Top;
+                if (lastY != null && Math.Abs(lastY.Value - y) > 5)
+                    sb.AppendLine();
+
+                sb.Append($"{word.Text} ");
+                lastY = y;
+            }
+        }
+
+        return Task.FromResult($"PDF file content:\n{sb}");
     }
 }

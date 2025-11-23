@@ -17,7 +17,7 @@ public class ExecuteCommand : AIFunction
     }
 
     public override string Name => "execute_command";
-    public override string Description => "Executes a command line process and returns its standard output and error streams. USE WITH CAUTION. The command runs inside the agent's sandboxed working directory.";
+    public override string Description => "Executes a WINDOWS CMD command line process and returns its standard output and error streams. USE WITH CAUTION. The command runs inside the agent's sandboxed working directory.";
 
     public override JsonElement JsonSchema => JsonDocument.Parse(@"
         {
@@ -34,7 +34,6 @@ public class ExecuteCommand : AIFunction
     protected override async ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken cancellationToken)
     {
         string command = arguments.GetValueOrDefault("command") is JsonElement cmdElem ? cmdElem.GetString()! : null!;
-
         var call = new ToolCallModel
         {
             Id = Guid.NewGuid(),
@@ -53,51 +52,13 @@ public class ExecuteCommand : AIFunction
 
         try
         {
-            var process = new Process();
-            var processStartInfo = new ProcessStartInfo
-            {
-                WorkingDirectory = _ctx.WorkingDirectory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            _ctx.Terminal ??= new TerminalSession(_ctx.WorkingDirectory);
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                processStartInfo.FileName = "cmd.exe";
-                processStartInfo.Arguments = $"/C \"{command}\"";
-            }
-            else
-            {
-                processStartInfo.FileName = "/bin/bash";
-                processStartInfo.Arguments = $"-c \"{command}\"";
-            }
-
-            process.StartInfo = processStartInfo;
-            process.Start();
-
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-            await process.WaitForExitAsync(cancellationToken);
+            string result = await _ctx.Terminal.ExecuteCommandAsync(command, cancellationToken);
 
             call.Status = "Done";
             _ctx.OnToolCallReceived?.Invoke(call);
-
-            var result = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(output))
-            {
-                result.AppendLine("--- STDOUT ---");
-                result.AppendLine(output.Trim());
-            }
-            if (!string.IsNullOrWhiteSpace(error))
-            {
-                result.AppendLine("--- STDERR ---");
-                result.AppendLine(error.Trim());
-            }
-
-            return result.Length > 0 ? result.ToString() : "[No output]";
+            return result;
         }
         catch (Exception ex)
         {

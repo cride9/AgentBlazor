@@ -3,6 +3,7 @@ using Microsoft.Extensions.AI;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Markdown;
+using System.IO;
 using System.Text.Json;
 
 namespace AgentBlazor.Services.AgentTools;
@@ -37,6 +38,7 @@ public class CreatePdfFile : AIFunction
 
     protected override async ValueTask<object?> InvokeCoreAsync(AIFunctionArguments arguments, CancellationToken cancellationToken)
     {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
         string relativePath = arguments.GetValueOrDefault("path") is JsonElement pathElem ? pathElem.GetString()! : null!;
         string content = arguments.GetValueOrDefault("content") is JsonElement contentElem ? contentElem.GetString()! : null; // Content can be null/empty
 
@@ -82,9 +84,12 @@ public class CreatePdfFile : AIFunction
                 {
                     page.PageColor(Colors.White);
                     page.Margin(40);
+                    page.DefaultTextStyle(x => x.FontSize(11));
                     page.Content().Markdown(markdowntext);
                 });
             });
+
+            document.GeneratePdf(fullPath);
 
             call.Status = "Done";
             _ctx.OnToolCallReceived?.Invoke(call);
@@ -94,9 +99,13 @@ public class CreatePdfFile : AIFunction
         }
         catch (Exception ex)
         {
+            if (File.Exists(Path.GetFullPath(Path.Combine(_ctx.WorkingDirectory, relativePath))))
+            {
+                try { File.Delete(Path.GetFullPath(Path.Combine(_ctx.WorkingDirectory, relativePath))); } catch { }
+            }
             call.Status = "Error";
             _ctx.OnToolCallReceived?.Invoke(call);
-            return $"Error writing to file: {ex.Message}";
+            return $"Error writing to file: {ex.Message} \nStack: {ex.StackTrace}";
         }
     }
 }

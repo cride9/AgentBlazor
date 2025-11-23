@@ -15,11 +15,11 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<IChatClient>(sp =>
 {
     var chatClient = new ChatClient(
-        "qwen3:30b-a3b-instruct-2507-q4_K_M",
+        "deepseek-chat",
         new ApiKeyCredential(Environment.GetEnvironmentVariable("DEEPSEEK")),
         new OpenAIClientOptions
         {
-            Endpoint = new Uri("http://localhost:11434/v1"),
+            Endpoint = new Uri("https://api.deepseek.com"),
             NetworkTimeout = TimeSpan.FromMinutes(60),
         }
     ).AsIChatClient();
